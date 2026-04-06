@@ -1,9 +1,10 @@
 import yfinance as yf
 import pandas as pd
+import numpy as np
 from pathlib import Path
-from time import sleep
 
-DATA_DIR = Path("data/raw")
+RAW_DIR = Path("data/raw")
+PROC_DIR = Path("data/processed")
 
 TICKERS = [
     "AAPL",
@@ -15,15 +16,18 @@ TICKERS = [
     "TSLA"
 ]
 
-START_DATE = "2015-01-01"
-END_DATE = "2024-12-31"
+START = "2015-01-01"
+END = "2024-12-31"
+
+SEQ_LEN = 60
+PRED_HORIZON = 30
 
 
 def download_data():
 
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    RAW_DIR.mkdir(parents=True, exist_ok=True)
 
-    all_data = []
+    all_prices = []
 
     for ticker in TICKERS:
 
@@ -31,22 +35,62 @@ def download_data():
 
         df = yf.download(
             ticker,
-            start=START_DATE,
-            end=END_DATE,
+            start=START,
+            end=END,
             progress=False
         )
 
-        df["Ticker"] = ticker
-        all_data.append(df)
+        prices = df["Close"].squeeze()
+        prices.name = ticker
 
-        sleep(1)  # prevents API/cache locking
+        all_prices.append(prices)
 
-    data = pd.concat(all_data)
+    data = pd.concat(all_prices, axis=1)
 
-    data.to_csv(DATA_DIR / "stocks.csv")
+    data = data.dropna()
 
-    print("Saved to data/raw/stocks.csv")
+    data.to_csv(RAW_DIR / "close_prices.csv")
+
+    return data
+
+
+def normalize(data):
+
+    return (data - data.mean()) / data.std()
+
+
+def create_sequences(data):
+
+    values = data.values
+
+    X = []
+    y = []
+
+    for i in range(len(values) - SEQ_LEN - PRED_HORIZON):
+
+        X.append(values[i:i+SEQ_LEN])
+        y.append(values[i+SEQ_LEN+PRED_HORIZON])
+
+    return np.array(X), np.array(y)
+
+
+def build_dataset():
+
+    PROC_DIR.mkdir(parents=True, exist_ok=True)
+
+    data = download_data()
+
+    data = normalize(data)
+
+    X, y = create_sequences(data)
+
+    np.save(PROC_DIR / "X.csv", X)
+    np.save(PROC_DIR / "y.csv", y)
+
+    print("Dataset built successfully")
+    print("X shape:", X.shape)
+    print("y shape:", y.shape)
 
 
 if __name__ == "__main__":
-    download_data()
+    build_dataset()
