@@ -85,6 +85,9 @@ def evaluate(model, loader, loss_fn):
 
             pred = model(X_batch)
 
+            loss = loss_fn(pred, y_batch)
+            total_loss += loss.item()
+
             last_price = X_batch[:, -1, :]
 
             preds.append(pred)
@@ -95,7 +98,7 @@ def evaluate(model, loader, loss_fn):
     true = torch.cat(trues)
     last = torch.cat(lasts)
 
-    acc = directional_accuracy(pred, true)
+    acc = directional_accuracy(pred, true, last)
 
     return total_loss / len(loader), acc
 
