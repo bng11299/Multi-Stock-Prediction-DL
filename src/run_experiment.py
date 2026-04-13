@@ -144,6 +144,7 @@ def main():
     print("Running model:", args.model)
 
     train(model, train_loader, test_loader)
+    torch.save(model.state_dict(), f"results/{args.model}_model.pt")
 
 
 if __name__ == "__main__":
