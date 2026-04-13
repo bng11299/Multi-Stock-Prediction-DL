@@ -14,9 +14,12 @@ class LSTMModel(nn.Module):
             batch_first=True
         )
 
-        self.fc = nn.Linear(hidden_size, 1)
+        self.fc = nn.Linear(hidden_size, input_size)  # predict all stocks
 
     def forward(self, x):
+
         out, _ = self.lstm(x)
+
         out = out[:, -1, :]
+
         return self.fc(out)
