@@ -12,7 +12,6 @@ from models.lstm import LSTMModel
 from models.mlp import MLPModel
 from metrics.metrics import directional_accuracy
 
-
 BATCH_SIZE = 32
 EPOCHS = 20
 LR = 0.001
@@ -40,24 +39,23 @@ def get_model(name, seq_len, input_size, output_size):
 
 
 def train(model, train_loader, test_loader):
-    """Train for a fixed number of epochs and report loss plus directional accuracy."""
 
     optimizer = torch.optim.Adam(model.parameters(), lr=LR)
     loss_fn = nn.MSELoss()
 
+    final_loss = None
+    final_acc = None
+
     for epoch in range(EPOCHS):
 
         model.train()
-
         total_loss = 0
 
         for X_batch, y_batch in train_loader:
 
             pred = model(X_batch)
-
             loss = loss_fn(pred, y_batch)
 
-            # Standard optimize step for the current mini-batch.
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -66,12 +64,17 @@ def train(model, train_loader, test_loader):
 
         test_loss, acc = evaluate(model, test_loader, loss_fn)
 
+        final_loss = test_loss
+        final_acc = acc
+
         print(
             f"Epoch {epoch+1}/{EPOCHS} | "
             f"Train Loss {total_loss/len(train_loader):.4f} | "
             f"Test Loss {test_loss:.4f} | "
             f"Dir Acc {acc:.3f}"
         )
+
+    return final_loss, final_acc
 
 
 def evaluate(model, loader, loss_fn):
@@ -105,10 +108,11 @@ def evaluate(model, loader, loss_fn):
 
 def main():
     """Parse CLI args, prepare datasets, train the model, and save weights."""
+    from utils.logger import log_results
 
     parser = argparse.ArgumentParser()
-
     parser.add_argument("--model", default="lstm")
+    parser.add_argument("--features", default="returns+indicators")
 
     args = parser.parse_args()
 
@@ -152,6 +156,14 @@ def main():
     train(model, train_loader, test_loader)
     # Save the learned parameters so the same architecture can be reloaded later.
     torch.save(model.state_dict(), f"results/{args.model}_model.pt")
+    test_loss, acc = train(model, train_loader, test_loader)
+
+    log_results(
+        model_name=args.model,
+        features=args.features,
+        test_loss=test_loss,
+        direction_acc=acc
+    )
 
 
 if __name__ == "__main__":
