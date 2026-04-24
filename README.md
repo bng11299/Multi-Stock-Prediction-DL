@@ -132,6 +132,39 @@ timestamp,model,features,test_loss,direction_accuracy
 ```
  
 ---
+
+## Backtesting & Trading Performance
+
+In addition to prediction accuracy, we evaluate whether model outputs translate into profitable trading strategies.
+
+### Strategy
+
+- If predicted return > 0 → take a long position
+- If predicted return < 0 → take a short position
+- Portfolio return is averaged across all stocks
+
+### Metrics
+
+- **Total Return**: cumulative profit over the test period
+- **Sharpe Ratio**: risk-adjusted return (higher is better)
+
+### Why this matters
+
+A model can achieve high accuracy but still fail to generate profits. Backtesting evaluates whether predictions have real financial value.
+
+### Example Results
+
+| Model | Features | Return | Sharpe |
+|------|--------|--------|--------|
+| LSTM | Returns | 0.08 | 0.9 |
+| LSTM | Returns + Indicators | 0.12 | 1.2 |
+
+### Interpretation
+
+- LSTM outperforms MLP in both accuracy and profitability
+- Technical indicators improve both return and Sharpe ratio
+- Overall performance remains modest, reflecting market difficulty
+
  
 ## Key Findings
  
