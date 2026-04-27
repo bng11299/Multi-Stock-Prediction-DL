@@ -95,18 +95,12 @@ def compute_targets(prices):
 # ---------------------------
 # Sequence builder
 # ---------------------------
-def create_sequences(features, targets):
+def create_sequences(features, target, seq_length=60, pred_horizon=30):
+    X, y = [], []
 
-    X = []
-    y = []
-
-    values_X = features.values
-    values_y = targets.values
-
-    for i in range(len(features) - SEQ_LEN - PRED_HORIZON):
-
-        X.append(values_X[i:i + SEQ_LEN])
-        y.append(values_y[i + SEQ_LEN])
+    for i in range(len(features) - seq_length - pred_horizon):
+        X.append(features[i:i+seq_length])
+        y.append(target[i+seq_length+pred_horizon])
 
     return np.array(X), np.array(y)
 
@@ -121,12 +115,16 @@ def build_dataset():
     prices = download_data()
 
     features = compute_features(prices)
+    df["return"] = np.log(p / p.shift(1))
+    df["ma"] = df["Close"].rolling(10).mean()
+    df = df.shift(1)
     targets = compute_targets(prices)
 
     # align indices
-    features, targets = features.align(targets, join="inner", axis=0)
+    features = full_feature_matrix
+    target = returns_matrix   # ONLY returns
 
-    X, y = create_sequences(features, targets)
+    X, y = create_sequences(features, target)
 
     np.save(PROC_DIR / "X.npy", X)
     np.save(PROC_DIR / "y.npy", y)
