@@ -1,3 +1,4 @@
+from pyexpat import model
 import sys
 sys.path.append("src")
 
@@ -62,7 +63,8 @@ def train(model, train_loader, test_loader):
 
             total_loss += loss.item()
 
-        test_loss, acc = evaluate(model, test_loader, loss_fn)
+        test_loss, acc, y_true, y_pred = evaluate(model, test_loader, loss_fn)
+
 
         final_loss = test_loss
         final_acc = acc
@@ -74,36 +76,45 @@ def train(model, train_loader, test_loader):
             f"Dir Acc {acc:.3f}"
         )
 
-    return final_loss, final_acc
+    from backtest import backtest_strategy
+
+    results = backtest_strategy(y_true, y_pred)
+    print("y_true range:", y_true.min(), y_true.max())
+    print("y_pred range:", y_pred.min(), y_pred.max())
+    print("\nFinal Backtest Results:")
+    print(f"Total Return: {results['total_return']:.4f}")
+    print(f"Sharpe Ratio: {results['sharpe_ratio']:.4f}")
+
+    return final_loss, final_acc, results
 
 
-def evaluate(model, loader, loss_fn):
+def evaluate(model, test_loader, loss_fn):
     """Run the model in inference mode and aggregate metrics across the loader."""
 
-    model.eval()
+    all_preds = []
+    all_targets = []
 
-    total_loss = 0
-    preds = []
-    trues = []
+    model.eval()
+    test_loss = 0
 
     with torch.no_grad():
-
-        for X_batch, y_batch in loader:
-
+        for X_batch, y_batch in test_loader:
             pred = model(X_batch)
 
             loss = loss_fn(pred, y_batch)
-            total_loss += loss.item()
+            test_loss += loss.item()
 
-            preds.append(pred)
-            trues.append(y_batch)
+            # STORE predictions
+            all_preds.append(pred.cpu().numpy())
+            all_targets.append(y_batch.cpu().numpy())
 
-    pred = torch.cat(preds)
-    true = torch.cat(trues)
 
-    acc = directional_accuracy(pred, true)
+    y_pred = np.concatenate(all_preds, axis=0)
+    y_true = np.concatenate(all_targets, axis=0)
 
-    return total_loss / len(loader), acc
+    acc = directional_accuracy(y_pred, y_true)
+
+    return test_loss / len(test_loader), acc, y_true, y_pred
 
 
 def main():
@@ -153,16 +164,17 @@ def main():
 
     print("Running model:", args.model)
 
-    train(model, train_loader, test_loader)
-    # Save the learned parameters so the same architecture can be reloaded later.
+    test_loss, acc, results = train(model, train_loader, test_loader)
+
     torch.save(model.state_dict(), f"results/{args.model}_model.pt")
-    test_loss, acc = train(model, train_loader, test_loader)
 
     log_results(
         model_name=args.model,
         features=args.features,
         test_loss=test_loss,
-        direction_acc=acc
+        direction_acc=acc,
+        total_return=results["total_return"],
+        sharpe=results["sharpe_ratio"]
     )
 
 
