@@ -5,7 +5,7 @@ from datetime import datetime
 RESULTS_FILE = "results/metrics.csv"
 
 
-def log_results(model_name, features, test_loss, direction_acc):
+def log_results(model_name, features, test_loss, direction_acc, total_return, sharpe):
 
     os.makedirs("results", exist_ok=True)
 
@@ -14,7 +14,9 @@ def log_results(model_name, features, test_loss, direction_acc):
         "model": model_name,
         "features": features,
         "test_loss": test_loss,
-        "direction_accuracy": direction_acc
+        "direction_accuracy": direction_acc,
+        "total_return": total_return,
+        "sharpe_ratio": sharpe
     }
 
     # Case 1: file does NOT exist → create it
