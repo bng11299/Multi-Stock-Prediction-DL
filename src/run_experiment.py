@@ -1,4 +1,3 @@
-from pyexpat import model
 import sys
 sys.path.append("src")
 
@@ -12,6 +11,7 @@ from sklearn.model_selection import train_test_split
 from models.lstm import LSTMModel
 from models.mlp import MLPModel
 from metrics.metrics import directional_accuracy
+from utils.history_logger import log_epoch
 
 BATCH_SIZE = 32
 EPOCHS = 20
@@ -39,7 +39,7 @@ def get_model(name, seq_len, input_size, output_size):
     raise ValueError("Unknown model")
 
 
-def train(model, train_loader, test_loader):
+def train(model, train_loader, test_loader, model_name, features):
 
     optimizer = torch.optim.Adam(model.parameters(), lr=LR)
     loss_fn = nn.MSELoss()
@@ -68,6 +68,15 @@ def train(model, train_loader, test_loader):
 
         final_loss = test_loss
         final_acc = acc
+
+        log_epoch(
+            model_name=model_name,
+            features=features,
+            epoch=epoch+1,
+            train_loss=total_loss/len(train_loader),
+            test_loss=test_loss,
+            direction_acc=acc
+        )
 
         print(
             f"Epoch {epoch+1}/{EPOCHS} | "
@@ -164,7 +173,13 @@ def main():
 
     print("Running model:", args.model)
 
-    test_loss, acc, results = train(model, train_loader, test_loader)
+    test_loss, acc, results = train(
+        model,
+        train_loader,
+        test_loader,
+        model_name=args.model,
+        features=args.features
+    )
 
     torch.save(model.state_dict(), f"results/{args.model}_model.pt")
 
