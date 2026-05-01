@@ -79,6 +79,9 @@ def compute_features(prices):
 
     features = pd.concat(features, axis=1)
 
+    # Shift all features so prediction at time t only uses info available before t
+    features = features.shift(1)
+    
     return features.dropna()
 
 
@@ -100,7 +103,7 @@ def create_sequences(features, target, seq_length=60, pred_horizon=30):
 
     for i in range(len(features) - seq_length - pred_horizon):
         X.append(features[i:i+seq_length])
-        y.append(target[i+seq_length+pred_horizon])
+        y.append(target[i+seq_length])
 
     return np.array(X), np.array(y)
 
@@ -112,26 +115,40 @@ def build_dataset():
 
     PROC_DIR.mkdir(parents=True, exist_ok=True)
 
+    # Download close prices
     prices = download_data()
 
+    # Generate lagged features
     features = compute_features(prices)
-    df["return"] = np.log(p / p.shift(1))
-    df["ma"] = df["Close"].rolling(10).mean()
-    df = df.shift(1)
+
+    # Generate future return targets
     targets = compute_targets(prices)
 
-    # align indices
-    features = full_feature_matrix
-    target = returns_matrix   # ONLY returns
+    # Align shared dates only
+    common_index = features.index.intersection(targets.index)
 
-    X, y = create_sequences(features, target)
+    features = features.loc[common_index]
+    targets = targets.loc[common_index]
 
+    # Convert to numpy
+    feature_matrix = features.values
+    target_matrix = targets.values
+
+    # Build supervised sequences
+    X, y = create_sequences(
+        feature_matrix,
+        target_matrix,
+        seq_length=SEQ_LEN,
+        pred_horizon=PRED_HORIZON
+    )
+
+    # Save
     np.save(PROC_DIR / "X.npy", X)
     np.save(PROC_DIR / "y.npy", y)
 
-    print("Dataset built")
-    print("X shape:", X.shape)
-    print("y shape:", y.shape)
+    print("Dataset built successfully")
+    print("Features shape:", X.shape)
+    print("Targets shape:", y.shape)
 
 
 if __name__ == "__main__":
