@@ -79,6 +79,9 @@ def compute_features(prices):
 
     features = pd.concat(features, axis=1)
 
+    # Shift all features so prediction at time t only uses info available before t
+    features = features.shift(1)
+    
     return features.dropna()
 
 
@@ -95,18 +98,12 @@ def compute_targets(prices):
 # ---------------------------
 # Sequence builder
 # ---------------------------
-def create_sequences(features, targets):
+def create_sequences(features, target, seq_length=60, pred_horizon=30):
+    X, y = [], []
 
-    X = []
-    y = []
-
-    values_X = features.values
-    values_y = targets.values
-
-    for i in range(len(features) - SEQ_LEN - PRED_HORIZON):
-
-        X.append(values_X[i:i + SEQ_LEN])
-        y.append(values_y[i + SEQ_LEN])
+    for i in range(len(features) - seq_length - pred_horizon):
+        X.append(features[i:i+seq_length])
+        y.append(target[i+seq_length])
 
     return np.array(X), np.array(y)
 
@@ -118,22 +115,40 @@ def build_dataset():
 
     PROC_DIR.mkdir(parents=True, exist_ok=True)
 
+    # Download close prices
     prices = download_data()
 
+    # Generate lagged features
     features = compute_features(prices)
+
+    # Generate future return targets
     targets = compute_targets(prices)
 
-    # align indices
-    features, targets = features.align(targets, join="inner", axis=0)
+    # Align shared dates only
+    common_index = features.index.intersection(targets.index)
 
-    X, y = create_sequences(features, targets)
+    features = features.loc[common_index]
+    targets = targets.loc[common_index]
 
+    # Convert to numpy
+    feature_matrix = features.values
+    target_matrix = targets.values
+
+    # Build supervised sequences
+    X, y = create_sequences(
+        feature_matrix,
+        target_matrix,
+        seq_length=SEQ_LEN,
+        pred_horizon=PRED_HORIZON
+    )
+
+    # Save
     np.save(PROC_DIR / "X.npy", X)
     np.save(PROC_DIR / "y.npy", y)
 
-    print("Dataset built")
-    print("X shape:", X.shape)
-    print("y shape:", y.shape)
+    print("Dataset built successfully")
+    print("Features shape:", X.shape)
+    print("Targets shape:", y.shape)
 
 
 if __name__ == "__main__":
