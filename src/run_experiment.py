@@ -122,6 +122,7 @@ def evaluate(model, test_loader, loss_fn):
     y_true = np.concatenate(all_targets, axis=0)
 
     acc = directional_accuracy(y_pred, y_true)
+    print("Correlation(pred, true):", np.corrcoef(y_pred.flatten(), y_true.flatten())[0,1])
 
     return test_loss / len(test_loader), acc, y_true, y_pred
 
