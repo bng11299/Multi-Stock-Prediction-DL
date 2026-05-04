@@ -171,12 +171,16 @@ A model can achieve high accuracy but still fail to generate profits. Backtestin
 - LSTM consistently outperforms MLP
 - Technical indicators improve predictive performance
 - Realistic directional accuracy range: **~0.55–0.62**
----
+
  
-## Next Steps
- 
-- [ ] Add Transformer model
-- [ ] Implement classification (up/down prediction)
-- [ ] Backtesting trading strategy
-- [ ] Feature ablation study
-- [ ] Hyperparameter tuning
+## Final Findings
+
+After correcting data leakage issues and enforcing strict temporal validation:
+
+- Model performance dropped substantially compared to early inflated experiments
+- LSTM models slightly outperformed MLP architectures
+- Adding technical indicators improved predictive loss modestly
+- Backtested strategies produced negative returns, suggesting no robust tradable edge
+- Baseline persistence remained surprisingly competitive
+
+This highlights the difficulty of financial forecasting and the necessity of careful leakage prevention in time-series ML pipelines.
