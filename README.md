@@ -170,7 +170,23 @@ A model can achieve high accuracy but still fail to generate profits. Backtestin
  
 - LSTM consistently outperforms MLP
 - Technical indicators improve predictive performance
-- Realistic directional accuracy range: **~0.55–0.62**
+- Realistic directional accuracy range: **~0.55–0.62*
+-
+-
+
+## Baseline Comparison
+
+To contextualize deep learning model performance, we implemented a persistence baseline that predicts future returns using the most recent observed return.
+
+### Persistence Baseline Performance
+- MSE: 0.0209
+- Directional Accuracy: 52.1%
+
+### Key Takeaways
+- Baseline performance was modest but realistic
+- Deep learning models only slightly improved predictive loss
+- None of the tested architectures consistently translated predictive improvements into profitable trading returns
+- This reinforces the difficulty of financial forecasting and the importance of comparing against simple benchmarks
 
  
 ## Final Findings
