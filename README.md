@@ -57,10 +57,10 @@ To contextualize model performance, we implemented a persistence benchmark that 
 | Model | Features | Test Loss | Directional Accuracy | Trading Return | Sharpe |
 |------|----------|-----------|----------------------|----------------|--------|
 | Persistence Baseline | Returns | 0.0209 | 0.521 | N/A | N/A |
-| LSTM | Returns | ~0.029–0.035 | ~0.39–0.47 | Negative | Negative |
-| LSTM | Returns + Indicators | Slightly improved | Slightly improved | Negative | Negative |
-| MLP | Returns | Worse than LSTM | Near baseline | Negative | Negative |
-| MLP | Returns + Indicators | Minor improvement | Near baseline | Negative | Negative |
+| LSTM | Returns | 0.0543 | 0.363 | -1.00 | -0.19 |
+| LSTM | Returns + Indicators | 0.0398 | 0.393 | -1.00 | -0.13 |
+| MLP | Returns | 0.0844 | 0.318 | -1.00 | -0.40 |
+| MLP | Returns + Indicators | 0.0933 | 0.347 | -1.00 | -0.31 |
 
 ---
 
