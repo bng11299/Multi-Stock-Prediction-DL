@@ -10,6 +10,7 @@ from sklearn.model_selection import train_test_split
 
 from models.lstm import LSTMModel
 from models.mlp import MLPModel
+from models.transformer import TransformerModel  # ← added
 from metrics.metrics import directional_accuracy
 from utils.history_logger import log_epoch
 
@@ -36,7 +37,10 @@ def get_model(name, seq_len, input_size, output_size):
     if name == "mlp":
         return MLPModel(seq_len, input_size, output_size)
 
-    raise ValueError("Unknown model")
+    if name == "transformer":                              # ← added
+        return TransformerModel(input_size, output_size)  # ← added
+
+    raise ValueError(f"Unknown model: '{name}'. Choose from: lstm, mlp, transformer")
 
 
 def train(model, train_loader, test_loader, model_name, features):
@@ -64,7 +68,6 @@ def train(model, train_loader, test_loader, model_name, features):
             total_loss += loss.item()
 
         test_loss, acc, y_true, y_pred = evaluate(model, test_loader, loss_fn)
-
 
         final_loss = test_loss
         final_acc = acc
@@ -113,10 +116,8 @@ def evaluate(model, test_loader, loss_fn):
             loss = loss_fn(pred, y_batch)
             test_loss += loss.item()
 
-            # STORE predictions
             all_preds.append(pred.cpu().numpy())
             all_targets.append(y_batch.cpu().numpy())
-
 
     y_pred = np.concatenate(all_preds, axis=0)
     y_true = np.concatenate(all_targets, axis=0)
@@ -132,7 +133,7 @@ def main():
     from utils.logger import log_results
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", default="lstm")
+    parser.add_argument("--model", default="lstm", choices=["lstm", "mlp", "transformer"])
     parser.add_argument("--features", default="returns+indicators")
 
     args = parser.parse_args()
@@ -140,11 +141,8 @@ def main():
     X, y = load_data()
 
     seq_len = X.shape[1]
-    num_stocks = X.shape[2]
-
-    input_size = X.shape[2]   # ~35 features
-    output_size = y.shape[1]  # 7 stocks
-    seq_len = X.shape[1]
+    input_size = X.shape[2]
+    output_size = y.shape[1]
 
     # Preserve chronological order so future information never leaks into training.
     X_train, X_test, y_train, y_test = train_test_split(
