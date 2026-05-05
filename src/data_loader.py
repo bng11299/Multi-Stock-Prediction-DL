@@ -98,10 +98,10 @@ def compute_targets(prices):
 # ---------------------------
 # Sequence builder
 # ---------------------------
-def create_sequences(features, target, seq_length=60, pred_horizon=30):
+def create_sequences(features, target, seq_length=60):
     X, y = [], []
 
-    for i in range(len(features) - seq_length - pred_horizon):
+    for i in range(len(features) - seq_length):
         X.append(features[i:i+seq_length])
         y.append(target[i+seq_length])
 
@@ -112,37 +112,29 @@ def create_sequences(features, target, seq_length=60, pred_horizon=30):
 # Main
 # ---------------------------
 def build_dataset():
-
     PROC_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Download close prices
     prices = download_data()
 
-    # Generate lagged features
     features = compute_features(prices)
+    features = features.shift(1)
 
-    # Generate future return targets
     targets = compute_targets(prices)
 
-    # Align shared dates only
     common_index = features.index.intersection(targets.index)
-
     features = features.loc[common_index]
     targets = targets.loc[common_index]
 
-    # Convert to numpy
-    feature_matrix = features.values
-    target_matrix = targets.values
+    features = features.replace([np.inf, -np.inf], np.nan)
+    targets = targets.replace([np.inf, -np.inf], np.nan)
 
-    # Build supervised sequences
-    X, y = create_sequences(
-        feature_matrix,
-        target_matrix,
-        seq_length=SEQ_LEN,
-        pred_horizon=PRED_HORIZON
-    )
+    mask = ~np.isnan(features).any(axis=1) & ~np.isnan(targets).any(axis=1)
 
-    # Save
+    features = features[mask]
+    targets = targets[mask]
+
+    X, y = create_sequences(features.values, targets.values, SEQ_LEN)
+
     np.save(PROC_DIR / "X.npy", X)
     np.save(PROC_DIR / "y.npy", y)
 

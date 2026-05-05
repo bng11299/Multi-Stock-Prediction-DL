@@ -57,6 +57,8 @@ def train(model, train_loader, test_loader, model_name, features):
         total_loss = 0
 
         for X_batch, y_batch in train_loader:
+            if torch.isnan(X_batch).any() or torch.isnan(y_batch).any():
+                continue
 
             pred = model(X_batch)
             loss = loss_fn(pred, y_batch)
@@ -150,12 +152,28 @@ def main():
         test_size=0.2,
         shuffle=False
     )
+   
+    from sklearn.preprocessing import StandardScaler
+
+    scaler = StandardScaler()
+
+    X_train_shape = X_train.shape
+    X_test_shape = X_test.shape
+
+    X_train = scaler.fit_transform(
+        X_train.reshape(-1, X_train.shape[-1])
+    ).reshape(X_train_shape)
+
+    X_test = scaler.transform(
+        X_test.reshape(-1, X_test.shape[-1])
+    ).reshape(X_test_shape)
 
     X_train = torch.tensor(X_train, dtype=torch.float32)
     y_train = torch.tensor(y_train, dtype=torch.float32)
 
     X_test = torch.tensor(X_test, dtype=torch.float32)
     y_test = torch.tensor(y_test, dtype=torch.float32)
+
 
     train_loader = DataLoader(
         TensorDataset(X_train, y_train),

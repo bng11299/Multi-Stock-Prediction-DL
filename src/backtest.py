@@ -1,44 +1,30 @@
 import numpy as np
 
+def backtest_strategy(y_true, y_pred, transaction_cost=0.001):
 
-def backtest_strategy(y_true, y_pred):
-    """
-    y_true: actual returns (N, num_stocks)
-    y_pred: predicted returns (N, num_stocks)
-    """
+    # convert to numpy if needed
+    y_true = np.array(y_true)
+    y_pred = np.array(y_pred)
 
-    # Convert predictions into positions
-    k = 2
-    positions = np.zeros_like(y_pred)
+    # 1. positions from predictions
+    positions = np.sign(y_pred)
 
-    for t in range(len(y_pred)):
-        top = np.argsort(y_pred[t])[-k:]
-        bottom = np.argsort(y_pred[t])[:k]
-
-        positions[t, top] = 1
-        positions[t, bottom] = -1
-
-    # Strategy returns
+    # 2. returns from true market movement
     strategy_returns = positions * y_true
-    strategy_returns = np.clip(strategy_returns, -0.1, 0.1)
-    cost = 0.001
-    strategy_returns -= cost
 
-    # Average across stocks
-    strategy_returns = strategy_returns.mean(axis=1)
+    # 3. transaction costs (based on position changes)
+    turnover = np.abs(np.diff(positions, axis=0))
 
-    # Cumulative return
-    cumulative_return = np.cumprod(1 + strategy_returns)
+    # align lengths (diff removes first step)
+    strategy_returns = strategy_returns[1:]
+
+    strategy_returns -= turnover * transaction_cost
+
+    # 4. metrics
+    total_return = np.prod(1 + strategy_returns) - 1
+    sharpe_ratio = np.mean(strategy_returns) / (np.std(strategy_returns) + 1e-8)
 
     return {
-        "strategy_returns": strategy_returns,
-        "cumulative_return": cumulative_return,
-        "total_return": cumulative_return[-1] - 1,
-        "sharpe_ratio": compute_sharpe(strategy_returns)
+        "total_return": total_return,
+        "sharpe_ratio": sharpe_ratio
     }
-
-
-def compute_sharpe(returns):
-    if returns.std() == 0:
-        return 0
-    return np.mean(returns) / np.std(returns) * np.sqrt(252)
