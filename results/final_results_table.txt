@@ -2,3 +2,5 @@
 2026-05-03 18:41:16        lstm returns+indicators   0.028042     -0.907295     -4.853393
 2026-05-03 21:35:47        lstm            results   0.033220     -0.974885     -5.541523
 2026-05-04 17:33:26 transformer results+indicators   0.031542     -0.905949     -4.563034
+2026-05-04 18:27:13 transformer results+indicators   0.049407     -1.000000     -0.310276
+2026-05-04 19:41:59 transformer            results   0.060478     -1.000000     -0.349240
