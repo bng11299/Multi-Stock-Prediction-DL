@@ -61,6 +61,8 @@ To contextualize model performance, we implemented a persistence benchmark that 
 | LSTM | Returns + Indicators | 0.0398 | 0.393 | -1.00 | -0.13 |
 | MLP | Returns | 0.0844 | 0.318 | -1.00 | -0.40 |
 | MLP | Returns + Indicators | 0.0933 | 0.347 | -1.00 | -0.31 |
+| Transformer | Returns | 0.0605 | 0.367 | -1.00 | -0.35 |
+| Transformer | Returns + Indicators | 0.049 | 0.348 | -1.00 | -0.31 |
 
 ---
 
@@ -91,7 +93,8 @@ Multi-Stock-Prediction-DL/
 ├── src/
 │   ├── models/
 │   │   ├── lstm.py              # LSTM architecture
-│   │   └── mlp.py               # MLP architecture
+│   │   └── mlp.py
+|   |           # MLP architecture
 │   │
 │   ├── baselines/
 │   │   └── persistence.py       # Baseline predictor
